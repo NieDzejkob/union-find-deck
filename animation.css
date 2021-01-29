@@ -1,0 +1,14 @@
+.highlight {
+    stroke-dasharray: 150,150;
+    stroke-width: 3.2;
+    animation: draw 0.5s ease-in-out;
+}
+
+@keyframes draw {
+    from {
+        stroke-dashoffset: 150;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
