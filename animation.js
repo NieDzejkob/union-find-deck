@@ -4,37 +4,31 @@ import createGraph from 'ngraph.graph';
 import createLayout from 'ngraph.forcelayout';
 
 export let g = createGraph();
-for (let i = 1; i <= 6; i++) g.addNode(i);
-for (let i = 7; i <= 9; i++) g.addNode(i);
-g.addLink(1, 2);
-g.addLink(2, 3);
-g.addLink(1, 5);
-g.addLink(2, 5);
-g.addLink(3, 4);
-g.addLink(4, 5);
-g.addLink(4, 6);
-g.addLink(7, 8);
-g.addLink(8, 9);
+
+const links = [
+    [1, 2],
+    [2, 3],
+    [1, 5],
+    [2, 5],
+    [3, 4],
+    [4, 5],
+    [4, 6],
+    [3, 9],
+    [9, 8],
+    [8, 7],
+];
 
 let layout = createLayout(g, {springLength: 20});
-function putNode(id, x, y) {
-    layout.pinNode(g.getNode(id), true);
-    layout.setNodePosition(id, x, y);
+
+for (const link of links) {
+    g.addLink(link[0], link[1]);
+    for (let i = 0; i < 250; i++) {
+        layout.step();
+    }
 }
 
-putNode(1, 100, -30);
-for (let i = 0; i < 500; i++) {
-    layout.step();
-}
-
-for (let i = 1; i <= 6; i++) layout.pinNode(g.getNode(i), true);
-
-putNode(7, 150, -20);
-for (let i = 0; i < 500; i++) {
-    layout.step();
-}
-
-export function Animation() {
+export function Animation(props) {
+    console.log(props);
     //const step = useSteps(3);
     const highlights = [
         // Weźmy sobie jakiś graf
