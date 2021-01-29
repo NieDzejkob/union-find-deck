@@ -10,5 +10,9 @@
     "code-surfer": "3.1.0",
     "mdx-deck": "3.0.13"
   },
-  "name": "union-find-deck"
+  "name": "union-find-deck",
+  "dependencies": {
+    "ngraph.forcelayout": "^3.0.0",
+    "ngraph.graph": "^19.1.0"
+  }
 }
