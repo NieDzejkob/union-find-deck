@@ -99,14 +99,21 @@ class Graph extends React.Component {
             } else {
                 const [color, a, b] = highlight;
                 const {x1, y1, x2, y2} = getLinkPosition(a, b);
+                const cls = highlight.length > 3 ? highlight[3] : "highlight";
                 elems.push(<line key={a + '-' + b + '-' + color}
                     x1={x1} y1={y1} x2={x2} y2={y2}
-                    className="highlight" stroke={color}
+                    className={cls} stroke={color}
                 />);
             }
         }
 
         return <svg fill="none" stroke="white" strokeWidth="3" viewBox={"0 0 " + width + " " + height}>
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="8"
+                        refX="9.2" refY="5" orient="auto" stroke="yellow">
+                    <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
+                </marker>
+            </defs>
             {elems}
             <text textAnchor="end" dominantBaseline="hanging" x={width} y="30"
             stroke="none" fill="white" style={{ fontSize: 30 }}>{this.props.comment}</text>
@@ -173,7 +180,7 @@ function animateLayers(start, color, target, targetColor) {
     let nextQueue = [start];
     let visited = new Set();
     visited.add(start);
-    while (nextQueue.length) {
+    while (nextQueue.length && !visited.has(target)) {
         let currentQueue = nextQueue;
         let currentStep = [];
         nextQueue = [];
@@ -221,8 +228,40 @@ const steps = [
     // Moglibyśmy zrobić tak, że weźmiemy jeden z końców...
     ['add', [['green', 1]]],
     // i puścimy wyszukiwanie, w głąb lub wszerz, nie ma znaczania
-    ['add'].concat(animateLayers(1, 'blue', 6, 'green')),
+    ['add'].concat(animateLayers(1, 'blue', 3, 'green')),
+    // Takie podejście będzie miało złożoność n + k, gdzie n to liczba wierzchołków,
+    // k to liczba krawędzi, z tym że każde zapytanie
+    // zaczynamy od zera, więc pomnożymy to jeszcze przez q.
     ['setComment', 'O(q(n + k))'],
+    // Możemy to zrobić lepiej - weźmy puśćmy wyszukiwanie z każdego wierzchołka po kolei,
+    // i ponumerujmy spójne składowe.
+    ['reset', [['blue', 1]]].concat(animateLayers(1, 'blue')),
+    ['add', [['orange', 7]]].concat(animateLayers(7, 'orange')),
+    // Teraz jak dostaniemy jakąś parę wierzchołków do sprawdzenia, to wystarczy
+    // sprawdzić czy są w tej samej spójnej składowej - na rysunku,
+    // czy są tego samego koloru.
+    //
+    // Jaka jest złożoność tego rozwiązania? Jak jakiś wierzchołek już jest pokolorowany,
+    // to nie musimy z niego puszczać kolejnego przeszukiwania, więc przygotowania zajmą
+    // nam O(n + k), po czym na każde zapytanie odpowiemy w czasie stałym.
+    ['setComment', 'O(n + k + q)'],
+    // Takie podejście ma taką wadę, że naszego grafu nie możemy za bardzo zmieniać.
+    ['reset'],
+    // Struktura danych Union-Find odpowiada na to samo pytanie,
+    // ale pozwala nam na szybkie dodanie krawędzi do grafu.
+    ['reset', [['white', 3, 9, 'dashed']]],
+    // Union-Find przypisuje każdej spójnej składowej pewnego reprezentanta.
+    // Jest to po prostu wyróżniony wierzchołek grafu.
+    ['reset', [['blue', 4], ['blue', 8]]],
+    ['setComment', "Find\nO(log n)",
+     'add', [
+         ['yellow', 2], ['yellow', 2, 4, 'arrow'],
+         ['yellow', 1], ['yellow', 1, 4, 'arrow'],
+         ['yellow', 3], ['yellow', 3, 4, 'arrow'],
+         ['yellow', 7], ['yellow', 7, 8, 'arrow'],
+        ]],
+    ['setComment', 'Union\nO(log n)',
+     'replace']
 ];
 
 export function Animation(props) {
@@ -238,8 +277,17 @@ export function Animation(props) {
             [[], step, ""],
         'add': (step, [base, current, comment]) =>
             [applySteps(base, current), step, comment],
-        'setComment': (step, [base, current, _]) =>
-            [applySteps(base, current), [], step[0]],
+        'replace': (step, [base, current, comment]) =>
+            [base, step, comment],
+        'setComment': (step, [base, current, _]) => {
+            const m = [applySteps(base, current), [], step[0]];
+            if (step.length > 1) {
+                const stepType = stepTypes[step[1]];
+                return stepType(step.slice(2), m);
+            } else {
+                return m;
+            }
+        }
     };
 
     const step = useSteps(steps.length - 1);

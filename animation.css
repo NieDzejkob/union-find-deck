@@ -1,7 +1,18 @@
-.highlight {
+.highlight, .arrow {
     stroke-dasharray: 150,150;
     stroke-width: 3.2;
     animation: draw 0.5s ease-in-out;
+}
+
+.arrow {
+    marker-end: url(#arrowhead);
+    animation: draw 0.5s ease-in-out, show-arrow 0.8s ease-in-out;
+}
+
+.dashed {
+    stroke-dasharray: 10,10,10,10,10,150;
+    stroke-width: 3.2;
+    animation: draw-dashed 1s ease-out;
 }
 
 @keyframes draw {
@@ -10,5 +21,20 @@
     }
     to {
         stroke-dashoffset: 0;
+    }
+}
+
+@keyframes draw-dashed {
+    from {
+        stroke-dashoffset: 50;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes show-arrow {
+    from {
+        marker-end: none;
     }
 }
