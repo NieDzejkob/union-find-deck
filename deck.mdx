@@ -4,7 +4,7 @@ import {
   Step,
 } from "code-surfer";
 import { github, vsDark } from "@code-surfer/themes";
-import { Animation } from "./animation.js";
+import { Animation, animateLayers } from "./animation.js";
 
 export const theme = vsDark;
 
@@ -14,7 +14,107 @@ Składowe spójne w zmieniającym się grafie.
 
 ---
 
-<Animation />
+<Animation
+graph={[
+    [1, 2],
+    [2, 3],
+    [1, 5],
+    [2, 5],
+    [3, 4],
+    [4, 5],
+    [4, 6],
+    [3, 9, true],
+    [9, 8],
+    [8, 7],
+]}
+steps={g => [
+    // Weźmy sobie jakiś graf
+    ['reset'],
+    // Chcemy wiedzieć, czy między dwoma węzłami istnieje ścieżka. Na przykład,
+    // jeśli weźmiemy 1 i 6,
+    ['add', [['green', 1], ['green', 6]]],
+    // to możemy przejść między nimi, przez 4 i 5
+    ['add',
+     [['blue', 1, 5],
+      ['blue', 5]],
+     [['blue', 5, 4],
+      ['blue', 4]],
+     [['blue', 4, 6]],
+     ],
+    // Lecz jeśli weźmiemy sobie 6 i 9, to nie ma między nimi ścieżki.
+    ['reset', [['red', 6], ['red', 9]]],
+    // Jak możemy odpowiedzieć na to pytanie?
+    ['reset'],
+    // Moglibyśmy zrobić tak, że weźmiemy jeden z końców...
+    ['add', [['green', 1]]],
+    // i puścimy wyszukiwanie, w głąb lub wszerz, nie ma znaczania
+    ['add'].concat(animateLayers(g, 1, 'blue', 3, 'green')),
+    // Takie podejście będzie miało złożoność n + k, gdzie n to liczba wierzchołków,
+    // k to liczba krawędzi, z tym że każde zapytanie
+    // zaczynamy od zera, więc pomnożymy to jeszcze przez q.
+    ['setComment', 'O(q(n + k))'],
+    // Możemy to zrobić lepiej - weźmy puśćmy wyszukiwanie z każdego wierzchołka po kolei,
+    // i ponumerujmy spójne składowe.
+    ['reset', [['blue', 1]]].concat(animateLayers(g, 1, 'blue')),
+    ['add', [['orange', 7]]].concat(animateLayers(g, 7, 'orange')),
+    // Teraz jak dostaniemy jakąś parę wierzchołków do sprawdzenia, to wystarczy
+    // sprawdzić czy są w tej samej spójnej składowej - na rysunku,
+    // czy są tego samego koloru.
+    //
+    // Jaka jest złożoność tego rozwiązania? Jak jakiś wierzchołek już jest pokolorowany,
+    // to nie musimy z niego puszczać kolejnego przeszukiwania, więc przygotowania zajmą
+    // nam O(n + k), po czym na każde zapytanie odpowiemy w czasie stałym.
+    ['setComment', 'O(n + k + q)'],
+    // Takie podejście ma taką wadę, że naszego grafu nie możemy za bardzo zmieniać.
+    ['reset'],
+    // Struktura danych Union-Find odpowiada na to samo pytanie,
+    // ale pozwala nam na szybkie dodanie krawędzi do grafu.
+    ['reset', [['white', 3, 9, 'dashed']]],
+    // Union-Find przypisuje każdej spójnej składowej pewnego reprezentanta.
+    // Jest to po prostu wyróżniony wierzchołek grafu.
+    ['reset', [['blue', 4], ['blue', 8]]],
+    ['setComment', "Find\nO(log n)",
+     'add', [
+         ['yellow', 2], ['yellow', 2, 4, 'arrow'],
+         ['yellow', 1], ['yellow', 1, 4, 'arrow'],
+         ['yellow', 3], ['yellow', 3, 4, 'arrow'],
+         ['yellow', 7], ['yellow', 7, 8, 'arrow'],
+        ]],
+    ['setComment', 'Union\nO(log n)',
+     'replace', [['red', 3, 9]]],
+    ['add', [['white', 8]]],
+]} />
+
+---
+
+<div style={{display: "flex", flexDirection: "row", width: "100%", height: "100%"}}>
+
+<div style={{display: "block", height: "100%", width: "50%"}}>
+<Animation
+graph={[
+[1, 2],
+[2, 3],
+[1, 5],
+[2, 5],
+[3, 4],
+[4, 5],
+[4, 6],
+[3, 9, true],
+[9, 8],
+[8, 7],
+]}
+steps={g => [
+['reset', [['blue', 4], ['blue', 8]]],
+]} />
+</div>
+
+<div style={{display: "block", height: "100%", width: "50%", background: "#f6f8fa"}}>
+<Animation color="black"
+graph={[[4, 1], [4, 5], [4, 6]]}
+steps={g => [['reset']]} />
+
+</div>
+</div>
 
 ---
 
