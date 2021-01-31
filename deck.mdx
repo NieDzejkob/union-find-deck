@@ -4,7 +4,7 @@ import {
   Step,
 } from "code-surfer";
 import { github, vsDark } from "@code-surfer/themes";
-import { Animation, animateLayers } from "./animation.js";
+import { Animation, animateLayers, makeGraph } from "./animation.js";
 
 export const theme = vsDark;
 
@@ -15,7 +15,7 @@ Składowe spójne w zmieniającym się grafie.
 ---
 
 <Animation
-graph={[
+graph={makeGraph([
     [1, 2],
     [2, 3],
     [1, 5],
@@ -23,10 +23,10 @@ graph={[
     [3, 4],
     [4, 5],
     [4, 6],
-    [3, 9, true],
+    [3, 9, 'shadow'],
     [9, 8],
     [8, 7],
-]}
+])}
 steps={g => [
     // Weźmy sobie jakiś graf
     ['reset'],
@@ -91,27 +91,41 @@ steps={g => [
 
 <div style={{display: "block", height: "100%", width: "50%"}}>
 <Animation
-graph={[
-[1, 2],
-[2, 3],
-[1, 5],
-[2, 5],
-[3, 4],
-[4, 5],
-[4, 6],
-[3, 9, true],
-[9, 8],
-[8, 7],
-]}
+graph={makeGraph([
+    [1, 2],
+    [2, 3],
+    [1, 5],
+    [2, 5],
+    [3, 4],
+    [4, 5],
+    [4, 6],
+    [3, 9, 'shadow'],
+    [9, 8],
+    [8, 7],
+])}
 steps={g => [
-['reset', [['blue', 4], ['blue', 8]]],
+    ['reset', [['blue', 4], ['blue', 8]]],
+    ['setComment', 'Find\u00a0\u00a0\u00a0',
+     'add', [['yellow', 2], ['yellow', 2, 4, 'arrow']]],
 ]} />
 </div>
 
 <div style={{display: "block", height: "100%", width: "50%", background: "#f6f8fa"}}>
-<Animation color="black"
-graph={[[4, 1], [4, 5], [4, 6]]}
-steps={g => [['reset']]} />
+<Animation color="black" directed
+graph={makeGraph([
+    [1, 4],
+    [5, 4],
+    [6, 4],
+    [2, 6],
+    [3, 5],
+    [7, 8],
+    [9, 8],
+    [8, 4, ['shadow', 'long']],
+], [4, 8])}
+steps={g => [
+    ['reset', [['blue', 4], ['blue', 8]]],
+    ['add', [['yellow', 2], ['yellow', 2, 6, 'arrow']]],
+]} />
 
 </div>
 </div>

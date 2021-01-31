@@ -12,7 +12,7 @@
   },
   "name": "union-find-deck",
   "dependencies": {
-    "ngraph.forcelayout": "^3.0.0",
+    "ngraph.forcelayout": "file:../ngraph.forcelayout",
     "ngraph.graph": "^19.1.0"
   }
 }

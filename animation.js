@@ -4,20 +4,36 @@ import createGraph from 'ngraph.graph';
 import createLayout from 'ngraph.forcelayout';
 import './animation.css';
 
-function makeGraph(links) {
-    console.log('makeGraph', links);
+export function makeGraph(links, roots=[]) {
     let g = createGraph();
     let layout = createLayout(g, {springLength: 20});
     let shadowLinks = [];
 
     for (const link of links) {
         const v = g.addLink(link[0], link[1]);
-        if (link[2]) {
+        const options = Array.isArray(link[2]) ? link[2] : [link[2]];
+        if (options.includes('shadow')) {
             shadowLinks.push(v);
         }
 
-        for (let i = 0; i < 250; i++) {
+        if (options.includes('long')) {
+            const spring = layout.getSpring(link[0], link[1]);
+            spring.length = 30;
+        }
+
+        for (let i = 0; i < 500; i++) {
             layout.step();
+            let rootY = Infinity;
+            for (const root of roots) {
+                if (!g.hasNode(root)) continue;
+                rootY = Math.min(rootY, layout.getNodePosition(root).y);
+            }
+
+            for (const root of roots) {
+                if (!g.hasNode(root)) continue;
+                const {x} = layout.getNodePosition(root);
+                layout.setNodePosition(root, x, rootY - 0.25);
+            }
         }
     }
 
@@ -65,6 +81,7 @@ class Graph extends React.Component {
 
         const scale = 5;
         let {min_x, min_y, max_x, max_y} = layout.getGraphRect();
+        console.log({min_x, min_y, max_x, max_y, color: this.props.color});
         min_x *= scale;
         min_y *= scale;
         max_x *= scale;
@@ -107,6 +124,7 @@ class Graph extends React.Component {
             const id = link.fromId + '-' + link.toId;
             elems.push(<line key={id}
                 x1={x1} y1={y1} x2={x2} y2={y2}
+                className={this.props.directed ? "arrow" : ""}
             />);
         });
 
@@ -121,10 +139,10 @@ class Graph extends React.Component {
             } else {
                 const [color, a, b] = highlight;
                 const {x1, y1, x2, y2} = getLinkPosition(a, b);
-                const cls = highlight.length > 3 ? highlight[3] : "highlight";
+                const cls = highlight.length > 3 ? highlight[3] : "";
                 elems.push(<line key={a + '-' + b + '-' + color}
                     x1={x1} y1={y1} x2={x2} y2={y2}
-                    className={cls} stroke={color}
+                    className={"highlight " + cls} stroke={color}
                 />);
             }
         }
@@ -141,6 +159,10 @@ class Graph extends React.Component {
         return <svg fill="none" stroke={color} strokeWidth="3" viewBox={"0 0 " + width + " " + height} width="100%" height="100%">
             <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="8"
+                        refX="9.2" refY="5" orient="auto" stroke="black">
+                    <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
+                </marker>
+                <marker id="arrowhead-yellow" markerWidth="10" markerHeight="8"
                         refX="9.2" refY="5" orient="auto" stroke="yellow">
                     <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
                 </marker>
@@ -197,6 +219,7 @@ class StaggerredHighlights extends React.Component {
         }
         return <Graph
             color={this.props.color}
+            directed={this.props.directed}
             graph={this.props.graph}
             layout={this.props.layout}
             highlight={highlight}
@@ -206,8 +229,8 @@ class StaggerredHighlights extends React.Component {
 }
 
 export function Animation(props) {
-    const {graph: links, steps: stepFun} = props;
-    const [graph, layout] = React.useMemo(() => makeGraph(links), [links]);
+    const stepFun = props.steps;
+    const [graph, layout] = props.graph;
     const steps = React.useMemo(() => stepFun(graph), [stepFun, graph]);
 
     function applySteps(base, steps) {
@@ -246,6 +269,9 @@ export function Animation(props) {
         state = stepType(steps[i].slice(1), state);
     }
 
-    return <StaggerredHighlights color={props.color} graph={graph} layout={layout}
+    return <StaggerredHighlights
+        color={props.color}
+        directed={props.directed}
+        graph={graph} layout={layout}
         baseHighlights={state[0]} highlights={state[1]} comment={state[2]} />
 }

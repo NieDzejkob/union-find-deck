@@ -1,11 +1,18 @@
-.highlight, .arrow {
+.highlight {
     stroke-dasharray: 150,150;
-    stroke-width: 3.2;
+    stroke-width: 3.5;
     animation: draw 0.5s ease-in-out;
 }
 
 .arrow {
     marker-end: url(#arrowhead);
+}
+
+.arrow[stroke="yellow"] {
+    marker-end: url(#arrowhead-yellow);
+}
+
+.highlight + .arrow {
     animation: draw 0.5s ease-in-out, show-arrow 0.8s ease-in-out;
 }
 
