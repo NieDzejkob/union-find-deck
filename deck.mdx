@@ -75,10 +75,10 @@ steps={g => [
     ['reset', [['blue', 4], ['blue', 8]]],
     ['setComment', "Find\nO(log n)",
      'add', [
-         ['yellow', 2], ['yellow', 2, 4, 'arrow'],
-         ['yellow', 1], ['yellow', 1, 4, 'arrow'],
-         ['yellow', 3], ['yellow', 3, 4, 'arrow'],
-         ['yellow', 7], ['yellow', 7, 8, 'arrow'],
+         ['orange', 2], ['orange', 2, 4, 'arrow'],
+         ['orange', 1], ['orange', 1, 4, 'arrow'],
+         ['orange', 3], ['orange', 3, 4, 'arrow'],
+         ['orange', 7], ['orange', 7, 8, 'arrow'],
         ]],
     ['setComment', 'Union\nO(log n)',
      'replace', [['red', 3, 9]]],
@@ -105,8 +105,13 @@ graph={makeGraph([
 ])}
 steps={g => [
     ['reset', [['blue', 4], ['blue', 8]]],
+    ['add'],
     ['setComment', 'Find\u00a0\u00a0\u00a0',
-     'add', [['yellow', 2], ['yellow', 2, 4, 'arrow']]],
+     'add', [['orange', 2], ['orange', 2, 4, 'arrow']]],
+    ['setComment', 'Union\u00a0\u00a0\u00a0',
+     'replace', [['red', 3, 9]]],
+    ['add', [['orange', 3], ['orange', 3, 4, 'arrow'],
+             ['orange', 9], ['orange', 9, 8, 'arrow']]],
 ]} />
 </div>
 
@@ -123,8 +128,22 @@ graph={makeGraph([
     [8, 4, ['shadow', 'long']],
 ], [4, 8])}
 steps={g => [
+    // Union Find ma strukturę lasu drzew, w którym korzenie są reprezentantami
+    // spójnych składowych. Każdy wierzchołek pamięta, kto jest jego rodzicem.
     ['reset', [['blue', 4], ['blue', 8]]],
-    ['add', [['yellow', 2], ['yellow', 2, 6, 'arrow']]],
+    // Konwencja jest taka, że reprezentanci są swoimi własnymi rodzicami.
+    ['add', [['black', 4, 4, 'arrow'],
+             ['black', 8, 8, 'arrow']]],
+    // Find jest wtedy dość prosty - po prostu idziemy w górę, aż trafimy na pętlę,
+    // która oznacza reprezentanta.
+    ['add', [['orange', 2], ['orange', 2, 6, 'arrow']],
+            [['orange', 6], ['orange', 6, 4, 'arrow']]],
+    // Union jest trochę bardziej skomplikowany. Załóżmy dla przykładu, że chcemy dodać
+    // krawędź pomiędzy 3 a 9.
+    ['replace'],
+    // Najpierw musimy znaleźć reprezentantów za pomocą Finda.
+    ['add', [['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow']],
+            [['orange', 5], ['orange', 5, 4, 'arrow']]],
 ]} />
 
 </div>

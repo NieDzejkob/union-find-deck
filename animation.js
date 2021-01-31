@@ -133,17 +133,29 @@ class Graph extends React.Component {
                 const [color, node] = highlight;
                 const {x, y} = getNodePosition(node);
                 elems.push(<circle
+                    pathLength="9.9"
                     key={node + "-" + color}
                     className="highlight" stroke={color}
                     cx={x} cy={y} r={radius} />);
             } else {
                 const [color, a, b] = highlight;
-                const {x1, y1, x2, y2} = getLinkPosition(a, b);
                 const cls = highlight.length > 3 ? highlight[3] : "";
-                elems.push(<line key={a + '-' + b + '-' + color}
-                    x1={x1} y1={y1} x2={x2} y2={y2}
-                    className={"highlight " + cls} stroke={color}
-                />);
+                if (a === b) {
+                    const {x, y} = getNodePosition(a);
+                    elems.push(<path d={"M" + x + " " + y + "m-18.51-25c-58.312-29.144 105-35.953 39.389-0.21583"}
+                        key={a + '-' + b + '-' + color}
+                        pathLength="9.9"
+                        className={"highlight " + cls} stroke={color}
+                    />);
+                } else {
+                    const {x1, y1, x2, y2} = getLinkPosition(a, b);
+                    elems.push(<line
+                        key={a + '-' + b + '-' + color}
+                        pathLength="9.9"
+                        x1={x1} y1={y1} x2={x2} y2={y2}
+                        className={"highlight " + cls} stroke={color}
+                    />);
+                }
             }
         }
 
@@ -162,8 +174,8 @@ class Graph extends React.Component {
                         refX="9.2" refY="5" orient="auto" stroke="black">
                     <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
                 </marker>
-                <marker id="arrowhead-yellow" markerWidth="10" markerHeight="8"
-                        refX="9.2" refY="5" orient="auto" stroke="yellow">
+                <marker id="arrowhead-orange" markerWidth="10" markerHeight="8"
+                        refX="9.2" refY="5" orient="auto" stroke="orange">
                     <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
                 </marker>
             </defs>
@@ -202,7 +214,7 @@ class StaggerredHighlights extends React.Component {
     advance() {
         this.setState(st => {
             if (st.stagesApplied < this.props.highlights.length) {
-                this.timeoutID = setTimeout(() => this.advance(), 300);
+                this.timeoutID = setTimeout(() => this.advance(), 400);
                 return {stagesApplied: st.stagesApplied + 1};
             } else {
                 return {};
