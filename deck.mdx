@@ -4,7 +4,7 @@ import {
   Step,
 } from "code-surfer";
 import { github, vsDark } from "@code-surfer/themes";
-import { Animation, animateLayers, makeGraph } from "./animation.js";
+import { Animation, animateLayers, makeGraph, highlightSubtree } from "./animation.js";
 
 export const theme = vsDark;
 
@@ -26,6 +26,7 @@ graph={makeGraph([
     [3, 9, 'shadow'],
     [9, 8],
     [8, 7],
+    [4, 7, ['shadow', 'long']],
 ])}
 steps={g => [
     // Weźmy sobie jakiś graf
@@ -102,8 +103,10 @@ graph={makeGraph([
     [3, 9, 'shadow'],
     [9, 8],
     [8, 7],
+    [4, 7, ['shadow', 'long']],
 ])}
 steps={g => [
+    ['reset'],
     ['reset', [['blue', 4], ['blue', 8]]],
     ['add'],
     ['setComment', 'Find\u00a0\u00a0\u00a0',
@@ -112,6 +115,7 @@ steps={g => [
      'replace', [['red', 3, 9]]],
     ['add', [['orange', 3], ['orange', 3, 4, 'arrow'],
              ['orange', 9], ['orange', 9, 8, 'arrow']]],
+    ['add', [['white', 8]]],
 ]} />
 </div>
 
@@ -128,8 +132,11 @@ graph={makeGraph([
     [8, 4, ['shadow', 'long']],
 ], [4, 8])}
 steps={g => [
-    // Union Find ma strukturę lasu drzew, w którym korzenie są reprezentantami
-    // spójnych składowych. Każdy wierzchołek pamięta, kto jest jego rodzicem.
+    // Union Find ma strukturę lasu drzew. Każde drzewo odpowiada składowej spójnej
+    // w grafie.
+    ['reset'],
+    // Korzenie są reprezentantami składowych. Poza tym, drzewo nie odzwierciedla
+    // w żaden sposób struktury grafu. Każdy wierzchołek pamięta, kto jest jego rodzicem.
     ['reset', [['blue', 4], ['blue', 8]]],
     // Konwencja jest taka, że reprezentanci są swoimi własnymi rodzicami.
     ['add', [['black', 4, 4, 'arrow'],
@@ -141,9 +148,20 @@ steps={g => [
     // Union jest trochę bardziej skomplikowany. Załóżmy dla przykładu, że chcemy dodać
     // krawędź pomiędzy 3 a 9.
     ['replace'],
-    // Najpierw musimy znaleźć reprezentantów za pomocą Finda.
-    ['add', [['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow']],
-            [['orange', 5], ['orange', 5, 4, 'arrow']]],
+    // Najpierw musimy znaleźć reprezentantów za pomocą Finda - liczy się to,
+    // które składowe są łączone, nie w którym miejscu.
+    ['add',
+        [['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow']],
+        [['orange', 5], ['orange', 5, 4, 'arrow']]
+    ],
+    // Następnie łączymy ze sobą reprezentantów.
+    // Ważne jest to, aby dzieckiem została ta składowa, która oryginalnie miała
+    // mniej wierzchołków.
+    ['reset', [['red', 8, 4, 'arrow'], ['blue', 4], ['blue', 8],
+        ['black', 4, 4, 'arrow'], ['black', 8],
+        ['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow'],
+        ['orange', 5], ['orange', 5, 4, 'arrow']]
+    ],
 ]} />
 
 </div>
@@ -151,6 +169,42 @@ steps={g => [
 
 ---
 
+<Animation directed
+graph={makeGraph([
+    [2, 1],
+    [3, 1],
+    [6, 2],
+    [5, 2],
+    [4, 2],
+    [8, 3],
+    [7, 3],
+    [10, 4],
+    [9, 4],
+    [11, 5],
+    [12, 5],
+    [14, 6],
+    [13, 6],
+    [17, 8],
+    [18, 8],
+    [15, 7],
+    [16, 7],
+], [1], 0.6)}
+steps={g => [
+    // Ma to duży wpływ na złożoność czasową, ponieważ nadaje drzewu taką właściwość:
+    ['reset', [['white', 1, 1, 'arrow']]],
+    // Że jak weźmiemy dowolne podrzewo, powiedzmy że to o korzeniu 2.
+    ['add', [['red', 2]]],
+    // to każde jego poddrzewo będzie miało co najwyżej połowę wierzchołków.
+    ['add',
+        highlightSubtree(g, 2, 4, 'orange'),
+        highlightSubtree(g, 2, 5, 'yellow'),
+        highlightSubtree(g, 2, 6, 'green'),
+    ],
+    // Dzięki temu każdy krok w dół sprawia że poddrzewo pod nami się zmniejsza o połowę,
+    // przez co wysokość drzewa to około logarytm z n.
+]} />
+
+---
 <CodeSurfer>
 
 ```js title="This is a title" subtitle="and this a subtitle"

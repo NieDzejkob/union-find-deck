@@ -4,16 +4,32 @@
     animation: draw 0.4s ease-in-out;
 }
 
-.arrow {
-    marker-end: url(#arrowhead);
+.arrow[stroke="white"], svg[stroke="white"] .arrow:not([stroke]) {
+    marker-end: url(#arrowhead-white);
+}
+
+.arrow[stroke="black"], svg[stroke="black"] .arrow:not([stroke]) {
+    marker-end: url(#arrowhead-black);
+}
+
+.arrow[stroke="yellow"] {
+    marker-end: url(#arrowhead-yellow);
+}
+
+.arrow[stroke="green"] {
+    marker-end: url(#arrowhead-green);
 }
 
 .arrow[stroke="orange"] {
     marker-end: url(#arrowhead-orange);
 }
 
-.highlight + .arrow {
-    animation: draw 0.4s ease-in-out, show-arrow 0.6s ease-in-out;
+.arrow[stroke="red"] {
+    marker-end: url(#arrowhead-red);
+}
+
+.highlight.arrow {
+    animation: draw 0.4s ease-in-out, show-arrow 0.6s ease-in-out !important;
 }
 
 .dashed {

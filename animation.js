@@ -4,10 +4,27 @@ import createGraph from 'ngraph.graph';
 import createLayout from 'ngraph.forcelayout';
 import './animation.css';
 
-export function makeGraph(links, roots=[]) {
+export function makeGraph(links, roots=[], speed=0.25) {
     let g = createGraph();
     let layout = createLayout(g, {springLength: 20});
     let shadowLinks = [];
+
+    function doSteps(n) {
+        for (let i = 0; i < n; i++) {
+            layout.step();
+            let rootY = Infinity;
+            for (const root of roots) {
+                if (!g.hasNode(root)) continue;
+                rootY = Math.min(rootY, layout.getNodePosition(root).y);
+            }
+
+            for (const root of roots) {
+                if (!g.hasNode(root)) continue;
+                const {x} = layout.getNodePosition(root);
+                layout.setNodePosition(root, x, rootY - speed);
+            }
+        }
+    }
 
     for (const link of links) {
         const v = g.addLink(link[0], link[1]);
@@ -21,21 +38,10 @@ export function makeGraph(links, roots=[]) {
             spring.length = 30;
         }
 
-        for (let i = 0; i < 500; i++) {
-            layout.step();
-            let rootY = Infinity;
-            for (const root of roots) {
-                if (!g.hasNode(root)) continue;
-                rootY = Math.min(rootY, layout.getNodePosition(root).y);
-            }
-
-            for (const root of roots) {
-                if (!g.hasNode(root)) continue;
-                const {x} = layout.getNodePosition(root);
-                layout.setNodePosition(root, x, rootY - 0.25);
-            }
-        }
+        doSteps(500);
     }
+
+    doSteps(3000);
 
     for (const link of shadowLinks) {
         g.removeLink(link);
@@ -74,6 +80,22 @@ export function animateLayers(g, start, color, target, targetColor) {
     return steps;
 }
 
+export function highlightSubtree(g, parent, root, color) {
+    let output = [[color, root], [color, root, parent, 'arrow']];
+    let queue = [root];
+    while (queue.length) {
+        let a = queue.pop();
+        g.forEachLinkedNode(a, (b, L) => {
+            if (a !== L.toId) return;
+            b = b.id;
+            queue.push(b);
+            output.push([color, b]);
+            output.push([color, b, a, 'arrow']);
+        });
+    }
+    return output;
+}
+
 class Graph extends React.Component {
     render() {
         const color = this.props.color || "white";
@@ -81,7 +103,6 @@ class Graph extends React.Component {
 
         const scale = 5;
         let {min_x, min_y, max_x, max_y} = layout.getGraphRect();
-        console.log({min_x, min_y, max_x, max_y, color: this.props.color});
         min_x *= scale;
         min_y *= scale;
         max_x *= scale;
@@ -89,7 +110,7 @@ class Graph extends React.Component {
         const radius = 20;
         const border = 30;
         const dx = -min_x + radius + border;
-        const dy = -min_y + radius + border;
+        const dy = -min_y + radius + border + 10;
         const width = max_x - min_x + 2*(radius + border);
         const height = max_y - min_y + 2*(radius + border);
 
@@ -160,7 +181,10 @@ class Graph extends React.Component {
         }
 
         let y = 30;
-        for (const line of this.props.comment.split("\n")) {
+        const comment = this.props.comment;
+        // allow <tspan>s instead
+        const lines = comment.split ? comment.split("\n") : [comment];
+        for (const line of lines ){
             elems.push(
                 <text key={line} textAnchor="end" dominantBaseline="hanging" x={width} y={y}
                 stroke="none" fill={color} style={{ fontSize: 30 }}>{line}</text>
@@ -168,16 +192,19 @@ class Graph extends React.Component {
             y += 30;
         }
 
+        let defs = [];
+        for (const color of ["red", "orange", "black", "white", "yellow", "green"]) {
+            defs.push(
+                <marker key={color} id={"arrowhead-" + color}
+                        markerWidth="10" markerHeight="8"
+                        refX="9.2" refY="5" orient="auto" stroke={color}>
+                    <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
+                </marker>
+            );
+        }
         return <svg fill="none" stroke={color} strokeWidth="3" viewBox={"0 0 " + width + " " + height} width="100%" height="100%">
             <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="8"
-                        refX="9.2" refY="5" orient="auto" stroke="black">
-                    <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
-                </marker>
-                <marker id="arrowhead-orange" markerWidth="10" markerHeight="8"
-                        refX="9.2" refY="5" orient="auto" stroke="orange">
-                    <polyline points="5 3, 9 5, 5 7" strokeWidth="1" />
-                </marker>
+                {defs}
             </defs>
             {elems}
         </svg>;
@@ -274,9 +301,7 @@ export function Animation(props) {
     let step = useSteps(steps.length - 1);
     if (step > steps.length - 1) step = steps.length - 1;
     let state = [[], [], ''];
-    console.log(steps);
     for (let i = 0; i <= step; i++) {
-        console.log('Applying step', i);
         const stepType = stepTypes[steps[i][0]];
         state = stepType(steps[i].slice(1), state);
     }
