@@ -4,7 +4,7 @@ import {
   Step,
 } from "code-surfer";
 import { github, vsDark } from "@code-surfer/themes";
-import { Animation, animateLayers, makeGraph, highlightSubtree } from "./animation.js";
+import { Animation, animateLayers, makeGraph, highlightSubtree, hideAllEdges } from "./animation.js";
 
 export const theme = vsDark;
 
@@ -132,31 +132,17 @@ graph={makeGraph([
     [8, 4, ['shadow', 'long']],
 ], [4, 8])}
 steps={g => [
-    // Union Find ma strukturę lasu drzew. Każde drzewo odpowiada składowej spójnej
-    // w grafie.
     ['reset'],
-    // Korzenie są reprezentantami składowych. Poza tym, drzewo nie odzwierciedla
-    // w żaden sposób struktury grafu. Każdy wierzchołek pamięta, kto jest jego rodzicem.
     ['reset', [['blue', 4], ['blue', 8]]],
-    // Konwencja jest taka, że reprezentanci są swoimi własnymi rodzicami.
     ['add', [['black', 4, 4, 'arrow'],
              ['black', 8, 8, 'arrow']]],
-    // Find jest wtedy dość prosty - po prostu idziemy w górę, aż trafimy na pętlę,
-    // która oznacza reprezentanta.
     ['add', [['orange', 2], ['orange', 2, 6, 'arrow']],
             [['orange', 6], ['orange', 6, 4, 'arrow']]],
-    // Union jest trochę bardziej skomplikowany. Załóżmy dla przykładu, że chcemy dodać
-    // krawędź pomiędzy 3 a 9.
     ['replace'],
-    // Najpierw musimy znaleźć reprezentantów za pomocą Finda - liczy się to,
-    // które składowe są łączone, nie w którym miejscu.
     ['add',
         [['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow']],
         [['orange', 5], ['orange', 5, 4, 'arrow']]
     ],
-    // Następnie łączymy ze sobą reprezentantów.
-    // Ważne jest to, aby dzieckiem została ta składowa, która oryginalnie miała
-    // mniej wierzchołków.
     ['reset', [['red', 8, 4, 'arrow'], ['blue', 4], ['blue', 8],
         ['black', 4, 4, 'arrow'], ['black', 8],
         ['orange', 3], ['orange', 3, 5, 'arrow'], ['orange', 9], ['orange', 9, 8, 'arrow'],
@@ -190,99 +176,126 @@ graph={makeGraph([
     [16, 7],
 ], [1], 0.6)}
 steps={g => [
-    // Ma to duży wpływ na złożoność czasową, ponieważ nadaje drzewu taką właściwość:
     ['reset', [['white', 1, 1, 'arrow']]],
-    // Że jak weźmiemy dowolne podrzewo, powiedzmy że to o korzeniu 2.
     ['add', [['red', 2]]],
-    // to każde jego poddrzewo będzie miało co najwyżej połowę wierzchołków.
     ['add',
         highlightSubtree(g, 2, 4, 'orange'),
         highlightSubtree(g, 2, 5, 'yellow'),
         highlightSubtree(g, 2, 6, 'green'),
     ],
-    // Dzięki temu każdy krok w dół sprawia że poddrzewo pod nami się zmniejsza o połowę,
-    // przez co wysokość drzewa to około logarytm z n.
 ]} />
 
 ---
+
 <CodeSurfer>
 
-```js title="This is a title" subtitle="and this a subtitle"
-function lorem(ipsum, dolor = 1) {
-  const sit = ipsum == null ? 0 : ipsum.sit;
-  dolor = sit - amet(dolor);
-  return sit
-    ? consectetur(ipsum, 0, dolor < 0 ? 0 : dolor)
-    : [];
+```cpp file="find-union-impl.cpp"
+
+```
+
+```diff 4,6:7
+
+```
+
+```diff 7
+
+```
+
+```diff 6
+
+```
+
+```cpp 6,7
+#include <iostream>
+using namespace std;
+
+const int MAX_N = 200000;
+int N, M;
+// wartości poprawne tylko dla reprezentantów
+int size[MAX_N];
+int parent[MAX_N];
+
+int find(int a) {
+    while (parent[a] != a) {
+        a = parent[a];
+    }
+
+    return a;
 }
 
-function incididunt(ipsum, ut = 1) {
-  ut = labore.et(amet(ut), 0);
-  const sit = ipsum == null ? 0 : ipsum.sit;
+void merge(int a, int b) {
+    a = find(a); b = find(b);
+    if (a == b) return;
+    if (size[a] < size[b])
+        swap(a, b);
+    parent[b] = a;
+    size[a] += size[b];
+}
 
-  if (!sit || ut < 1) {
-    return [];
-  }
+int main() {
+    ios::sync_with_stdio(false); cin.tie();
+    cin >> N >> M;
 
-  let dolore = 0;
-  let magna = 0;
-  const aliqua = new eiusmod(labore.ut(sit / ut));
-
-  while (dolore < sit) {
-    aliqua[magna++] = consectetur(
-      ipsum,
-      dolore,
-      (dolore += ut)
-    );
-  }
-
-  return aliqua;
+    for (int i = 0; i < N; i++) {
+        parent[i] = i;
+        size[i] = 1;
+    }
 }
 ```
 
-```js
-function lorem(ipsum, dolor = 1) {
-  const sit = ipsum == null ? 0 : ipsum.sit;
-  dolor = sit - amet(dolor);
-  return sit
-    ? consectetur(ipsum, 0, dolor < 0 ? 0 : dolor)
-    : [];
-}
+```diff 31:34
 
-function adipiscing(...elit) {
-  if (!elit.sit) {
-    return [];
-  }
-
-  const sed = elit[0];
-  return eiusmod.tempor(sed) ? sed : [sed];
-}
-
-function incididunt(ipsum, ut = 1) {
-  ut = labore.et(amet(ut), 0);
-  const sit = ipsum == null ? 0 : ipsum.sit;
-
-  if (!sit || ut < 1) {
-    return [];
-  }
-
-  let dolore = 0;
-  let magna = 0;
-  const aliqua = new eiusmod(labore.ut(sit / ut));
-
-  while (dolore < sit) {
-    aliqua[magna++] = consectetur(
-      ipsum,
-      dolore,
-      (dolore += ut)
-    );
-  }
-
-  return aliqua;
-}
 ```
 
-```diff 1[10:14],2[15:19],3[22:27],10:12
+```diff 32
+
+```
+
+```diff 33
+
+```
+
+```diff 10:16
+
+```
+
+```diff 12
+
+```
+
+```diff 11[12:25]
+
+```
+
+```diff 18:25
+
+```
+
+```diff 19
+
+```
+
+```diff 20
+
+```
+
+```diff 21:22
+
+```
+
+```diff 23
+
+```
+
+```diff 24
+
+```
+
+```diff 20:22,24
+
+```
+
+```diff
 
 ```
 
@@ -290,55 +303,150 @@ function incididunt(ipsum, ut = 1) {
 
 ---
 
-<CodeSurferColumns themes={[vsDark, github]}>
-
-<Step>
-
-```js
-const magna = aliqua => aliqua.ut((enim, ad) => enim, 0);
-```
-
-```js
-const minim = (ad, enim) => dolore.magna(ad / enim);
-```
-
-</Step>
-
-<Step>
-
-```js
-const lorem = (ipsum, dolor, sit) => {
-  const amet = dolor - ipsum;
-  return consectetur.adipiscing(
-    {
-      elit: sed.eiusmod(sit - dolor) / amet + 2,
-    },
-    (tempor, incididunt) => ipsum + amet * incididunt
-  );
-};
-
-const magna = aliqua => aliqua.ut((enim, ad) => enim, 0);
-```
-
-```js
-const minim = (ad, enim) => dolore.magna(ad / enim);
-
-const sed = (eiusmod, tempor, incididunt) => {
-  const ut = tempor - eiusmod;
-  return labore.et(
-    {
-      amet: dolore.magna(incididunt - tempor) / ut + 2,
-    },
-    (aliqua, elit) => eiusmod + ut * elit
-  );
-};
-```
-
-</Step>
-
-</CodeSurferColumns>
+<Animation
+graph={makeGraph([
+    [1, 2],
+    [2, 3],
+    [1, 5],
+    [2, 5],
+    [3, 4],
+    [4, 5],
+    [4, 6],
+    [3, 9, 'shadow'],
+    [9, 8],
+    [8, 7],
+    [4, 7, ['shadow', 'long']],
+])}
+steps={g => [
+    ['reset'],
+    ['add', [['convexHull', 1, 2, 3, 4, 5, 6],
+             ['convexHull', 7, 8, 9]],
+        hideAllEdges(g)],
+]} />
 
 ---
 
-docs:  
-[codesurfer.pomb.us](https://codesurfer.pomb.us)
+<Animation directed
+graph={makeGraph([
+    [2, 1],
+    [3, 1],
+    [6, 2],
+    [5, 2],
+    [4, 2],
+    [8, 3],
+    [7, 3],
+    [10, 4],
+    [9, 4],
+    [11, 5],
+    [12, 5],
+    [14, 6],
+    [13, 6],
+    [17, 8],
+    [18, 8],
+    [15, 7],
+    [16, 7],
+], [1], 0.6)}
+steps={g => [
+    ['reset', [['white', 1, 1, 'arrow']]],
+    ['add', [['orange', 14], ['orange', 14, 6, 'arrow']],
+        [['orange', 6], ['orange', 6, 2, 'arrow']],
+        [['orange', 2], ['orange', 2, 1, 'arrow']],
+        [['blue', 1]]],
+    ['replace',
+        [['orange', 14], ['orange', 14, 1, 'arrow'],
+         ['orange', 6], ['orange', 6, 1, 'arrow'],
+         ['orange', 2], ['orange', 2, 1, 'arrow'],
+         ['blue', 1],
+         ['hide', 14, 6], ['hide', 6, 2]]],
+    ['setComment', 'O(α(n))'],
+    ['setComment', '≈ O(1)'],
+]} />
+
+---
+
+<CodeSurfer>
+
+```cpp 9:15 file="find-union-impl.cpp"
+
+```
+
+```cpp
+#include <iostream>
+using namespace std;
+
+const int MAX_N = 200000;
+int N, M;
+int size[MAX_N];
+int parent[MAX_N];
+
+int find(int a) {
+    if (parent[a] != a) {
+        parent[a] = find(parent[a]);
+    }
+
+    return parent[a];
+}
+
+void merge(int a, int b) {
+    a = find(a); b = find(b);
+    if (a == b) return;
+    if (size[a] < size[b])
+        swap(a, b);
+    parent[b] = a;
+    size[a] += size[b];
+}
+
+int main() {
+    ios::sync_with_stdio(false); cin.tie();
+    cin >> N >> M;
+
+    for (int i = 0; i < N; i++) {
+        parent[i] = i;
+        size[i] = 1;
+    }
+}
+```
+
+</CodeSurfer>
+
+---
+
+
+# Czas na zadanie
+
+## 2137.pl/wXJYbN
+
+---
+
+<Animation
+graph={makeGraph([
+    [1, 2],
+    [2, 3],
+    [1, 5],
+    [2, 5],
+    [3, 4],
+    [4, 5],
+    [4, 6],
+    [3, 9, 'shadow'],
+    [9, 8],
+    [8, 7],
+    [4, 7, ['shadow', 'long']],
+])}
+steps={g => [
+    ['setComment', <tspan style={{fontSize:20, fill: "#9cdcfe"}}>2137.pl/wXJYbN&nbsp;</tspan>],
+    ['add', [['hide', 8], ['hide', 9, 8], ['hide', 8, 7]]],
+    ['add', [['hide', 7]]],
+    ['add', [['hide', 9]]],
+    ['add', [['hide', 4], ['hide', 4, 6], ['hide', 3, 4], ['hide', 4, 5]]],
+    ['add', [['hide', 6]]],
+    ['add', [['hide', 2], ['hide', 1, 2], ['hide', 2, 3], ['hide', 2, 5]]],
+    ['add', [['hide', 3]]],
+    ['add', [['hide', 5], ['hide', 1, 5]]],
+    ['add', [['hide', 1]]],
+]} />
+
+---
+
+# Closing the farm
+
+## 2137.pl/wXJYbN

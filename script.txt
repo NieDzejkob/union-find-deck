@@ -1,0 +1,184 @@
+Okej, więc będę mówił o strukturze danych znanej jako Union-Find. Rozwiązuje
+ona problem składowych spójnych w grafie, który zmienia się podczas działania programu.
+
+Na przykład, weźmy sobie taki graf.
+
+Chcielibyśmy wiedzieć, czy istnieje jakaś ścieżka pomiędzy dwoma danymi wierzchołkami.
+
+Pomiędzy 1 a 6 istnieje ścieżka, przechodząca przez 5 i 4.
+
+Ale pomiędzy 6 a 9 nie ma ścieżki.
+
+Jak możemy rozwiązać taki problem?
+
+Jedną możliwością byłoby wziąć jeden z końców
+
+i puścić jakieś wyszukiwanie, w głąb lub wszerz - nie ma znaczenia. Jak istnieje ścieżka,
+to na pewno ją znajdziemy.
+
+Takie rozwiązanie ma złożoność n + k, gdzie n to liczba wierzchołków a k to liczba krawędzi,
+z tym że z każdym zapytaniem zaczynamy od nowa, więc pomnożymy to przez liczbę zapytań q.
+
+Drugim możliwym podejściem byłoby się najpierw przygotować - puszczamy to wyszukiwanie,
+i dla każdego wierzchołka zapisujemy że jest on częścią składowej spójnej numer 1.
+
+Potem idziemy po kolei po wierzchołkach aż natrafimy na jakiś którego nie przypisaliśmy,
+i puszczamy wyszukiwanie z 7. Wszystkim tym wierzchołkom przypisujemy składową numer 2.
+Teraz, gdy dostaniemy parę wierzchołków do sprawdzenia, wystarczy sprawdzić czy należą
+do tej samej składowej - czy mają ten sam kolor.
+
+Takie rozwiązanie zajmie czas n + k na przygotowanie grafu, a potem każde zapytanie
+obliczymy w czasie stałym.
+
+Różnica jest taka, że jak mamy przygotowany graf,
+
+to już nie możemy go zmieniać. Tutaj wchodzi struktura Union-Find, która pozwala nam
+na szybką aktualizację po dodaniu krawędzi do grafu.
+
+Struktura ta działa na takiej zasadzie, że każdej składowej spójnej przypisuje pewnego
+reprezentanta. Jest to dowolny wierzchołek należący do tej składowej.
+
+Mamy wtedy dwie operacje: Find, który w czasie logarytmicznym potrafi znaleźć reprezentanta
+składowej, w której znajduje się dany wierzchołek;
+
+Oraz Union, który również w czasie logarytmicznym doda krawędź do grafu.
+
+Oczywiście, wtedy jeden z wierzchołków straci status reprezentanta.
+
+Jak zrealizować takie operacje? Obok oryginalnego grafu przechowujemy też las drzew,
+gdzie każde drzewo odpowiada składowej grafu. Każdy wierzchołek pamięta,
+kto jest jego ojcem.
+
+Korzenie drzew to wtedy nasi reprezentanci. Poza tym struktura drzewa nie ma związku
+ze strukturą grafu.
+
+Ponadto konwencja jest taka, że ojcem korzenia jest sam wierzchołek - dzięki temu możemy
+rozpoznać reprezentanta bez żadnych wartości specjalnych, które mogłyby nam zawadzać.
+
+Operacja Find jest dość prosta - idziemy w górę drzewa aż dojdziemy do korzenia.
+
+Union jest trochę bardziej skomplikowany.
+
+Najpierw musimy znaleźć reprezentantów składowych, które łączymy.
+
+Po czym dodajemy między nimi krawędź w naszym lesie.
+Ważne jest tutaj, aby dzieckiem stała się ta składowa,
+w której znajduje się mniej wierzchołków, ponieważ daje to nam
+logarytmiczną złożoność czasową.
+
+Przyjrzyjmy się temu bliżej - weźmy jakieś większe drzewo.
+
+Chcemy zachować taką właściwość, że jak weźmiemy dowolne poddrzewo,
+na przykład to z korzeniem w dwójce,
+
+i rozważymy wszystkie jego bezpośrednie poddrzewa, to każde zawiera co najwyżej
+połowę wierzchołków całości. Na przykładzie - każdy pojedyńczy kolor to co najwyżej połowa
+wszystkich kolorowych wierzchołków razem. Zatem, jeśli idziemy do góry, to z każdym
+krokiem poddrzewo na którego korzeniu jesteśmy staje się dwa razy większe.
+To sprawia, że wysokość drzewa będzie mniejsza od
+logarytmu z ilości wierzchołków, dzięki czemu find i union będą miały
+złożoność logarytmiczną.
+
+Przejdźmy więc do implementacji.
+
+Stan Union-Finda składa się z dwóch tablic, rozmiaru równemu ilości wierzchołków.
+Jak znamy maksymalny rozmiar grafu to wystarczy zwykła tablica, a jak nie to możemy wziąć
+vector.
+
+Tablica parent pamięta, kto jest rodzicem każdego z wierzchołków,
+
+a tablica size pamięta ilość wierzchołków w składowej.
+
+Przy czym tylko indeksy reprezentantów mają poprawną wartość, reszta nie jest akualizowana.
+
+Dane te inicjalizujemy na początku programu,
+
+przy czym każdy jest swoim własnym rodzicem,
+
+a rozmiar każdej składowej wynosi 1.
+
+Find implementuje się dość prosto -
+
+idziemy sobie do góry,
+
+aż napotkamy reprezentanta, czyli wierzchołek który jest swoim własnym rodzicem.
+
+Pozostaje napisać union. Ponieważ union jest słowem kluczowym w C++, to funkcję tą
+nazwałem merge.
+
+Zaczynamy od znalezienia reprezentantów naszych składowych,
+
+przy czym jeśli wyniki są takie same, to znaczy że nasze wierzchołki są już w tej samej
+składowej, i nie trzeba nic robić. Ważna linijka, bo jak o niej zapomnimy to możemy
+uszkodzić dane w tablicy size.
+
+Potem porównujemy rozmiary, upewniając się, że składowa b jest mniejsza.
+
+Wtedy rodzicem mniejszej składowej staje się ta większa,
+
+więc musimy zaktualizować rozmiar składowej a.
+
+Jak implementujemy union to trzeba być trochę ostrożnym - mamy tutaj aż trzy rzeczy,
+które wpływają tylko na złożoność czasową. Jeśli pominiemy dowolną z nich, struktura
+danych zdegeneruje się nam do złożoności kwadratowej.
+
+Może zatrzymam się tu na chwilę - czy są jakieś pytania?
+
+Okej, to chciałbym jeszcze wspomnieć o dwóch rzeczach. Po pierwsze,
+czasami nasz oryginalny graf nie jest tak oczywisty
+
+i zamiast konkretnych krawędzi powinniśmy myśleć o naszych wierzchołkach jako
+elementy rozłącznych zbiorów, które czasami chcemy łączyć.
+
+Po drugie, chciałbym wspomnieć o pewnej optymalizacji zwanej kompresją ścieżek.
+
+W momencie gdy wykonujemy jakiegoś Finda,
+
+możemy zapisać bezpośrednie połączenie do korzenia w tych wierzchołkach, które odwiedzamy.
+
+W takiej sytuacji złożoność jest trudniejsza do określenia, ale wynik wychodzi taki, że
+po amortyzacji mamy tak zwaną odwrotną funkcję ackermanna,
+
+która rośnie tak wolno że ciężko ją odróżnić od złożoności stałej.
+
+Jeśli chodzi o implementację, to wystarczy lekko zmodyfikować finda -
+
+zamiast pętli wykorzystujemy implementację rekurencyjną.
+Kompresja ścieżek ma też jednak swoje wady. Gdybyśmy mieli wiele wątków, to oryginalnego
+finda może wykonywać wiele wątków na raz, a z kompresją ścieżek musimy uzyskać blokadę
+na mutexie. Ponadto, mimo lepszej złożoności, implementacja bez kompresji ścieżek
+potrafi być szybsza w praktyce, ponieważ nie musimy się wracać na dół drzewa by
+zaktualizować wskaźniki. Bardzo ciekawa sytuacja jest też w pewnym zadaniu
+z Bałtyckiej Olimpiady Informatycznej, gdzie brak kompresji ścieżek jest dość
+kluczowym elementem rozwiązania. Ale to cała osobna historia, może innym razem...
+
+Czas na jakieś zadanie - na ekranie macie link do treści i testów,
+ale pozwolę sobie omówić szybko treść.
+
+Zadanie nazywa się Closing the Farm, i polega na tym, że mamy graf który symbolizuje
+naszą farmę. Pytanie na które będziemy odpowiadać to czy farma jest spójna.
+W tym momencie nie jest ona spójna, ale jak będziemy zamykać poszczególne fragmenty
+farmy, to będzie się to zmieniać.
+
+Jak usuniemy ósemkę, to farma dalej jest niespójna,
+
+jak również po usunięciu siódemki
+
+ale gdy usuniemy dziewiątkę, to farma staje się spójna, ponieważ mamy tylko jedną składową.
+W taki sposób demontujemy całą farmę, przy czym wypisujemy czy była spójna na samym początku
+i po każdym ruchu. Czyli teraz byśmy wypisali tak
+
+nie
+
+tak
+
+nie
+
+tak
+
+tak
+
+i jak usuniemy ostatni wierzchołek, do czego zawsze dojdziemy, to już nic nie wypisujemy,
+bo trochę trudno określić czy odpowiedź powinna być tak czy nie.
+
+Zapraszam do rozwiązywania

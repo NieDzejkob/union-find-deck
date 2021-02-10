@@ -12,6 +12,7 @@
   },
   "name": "union-find-deck",
   "dependencies": {
+    "d3": "^6.5.0",
     "ngraph.forcelayout": "git+https://github.com/NieDzejkob/ngraph.forcelayout.git",
     "ngraph.graph": "^19.1.0"
   }

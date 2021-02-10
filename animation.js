@@ -3,6 +3,18 @@ import { useSteps } from 'mdx-deck';
 import createGraph from 'ngraph.graph';
 import createLayout from 'ngraph.forcelayout';
 import './animation.css';
+import { smoothHull } from './smoothHull.js';
+import { polygonHull } from 'd3-polygon';
+
+// https://stackoverflow.com/a/63179941
+class ObjectSet extends Set {
+    add(elem) {
+        return super.add(typeof elem === 'object' ? JSON.stringify(elem) : elem);
+    }
+    has(elem) {
+        return super.has(typeof elem === 'object' ? JSON.stringify(elem) : elem);
+    }
+}
 
 export function makeGraph(links, roots=[], speed=0.25) {
     let g = createGraph();
@@ -75,7 +87,8 @@ export function animateLayers(g, start, color, target, targetColor) {
                 }
             });
         }
-        steps.push(currentStep);
+        if (currentStep.length)
+            steps.push(currentStep);
     }
     return steps;
 }
@@ -96,6 +109,15 @@ export function highlightSubtree(g, parent, root, color) {
     return output;
 }
 
+export function hideAllEdges(g) {
+    let result = [];
+    g.forEachLink(link => {
+        result.push(['hide', link.fromId, link.toId]);
+    });
+
+    return result;
+}
+
 class Graph extends React.Component {
     render() {
         const color = this.props.color || "white";
@@ -108,7 +130,7 @@ class Graph extends React.Component {
         max_x *= scale;
         max_y *= scale;
         const radius = 20;
-        const border = 30;
+        const border = 40;
         const dx = -min_x + radius + border;
         const dy = -min_y + radius + border + 10;
         const width = max_x - min_x + 2*(radius + border);
@@ -129,8 +151,19 @@ class Graph extends React.Component {
                     x2: x2 - dirx, y2: y2 - diry};
         }
 
+        let hidden = new ObjectSet();
+        for (const highlight of this.props.highlight) {
+            if (highlight[0] === 'hide') {
+                hidden.add(highlight.slice(1));
+            }
+        }
+
+        console.log(hidden);
+
         let elems = [];
         this.props.graph.forEachNode(node => {
+            console.log([node.id]);
+            if (hidden.has([node.id])) return;
             let {x, y} = getNodePosition(node.id);
             elems.push(<circle key={node.id} cx={x} cy={y} r={radius} />);
             elems.push(<text key={node.id + "-text"}
@@ -140,6 +173,7 @@ class Graph extends React.Component {
         });
 
         this.props.graph.forEachLink(link => {
+            if (hidden.has([link.fromId, link.toId])) return;
             const {x1, y1, x2, y2} = getLinkPosition(link.fromId, link.toId);
 
             const id = link.fromId + '-' + link.toId;
@@ -150,7 +184,17 @@ class Graph extends React.Component {
         });
 
         for (const highlight of this.props.highlight) {
-            if (highlight.length === 2) {
+            if (highlight[0] === 'hide') continue;
+            if (highlight[0] === 'convexHull') {
+                const points = highlight.slice(1).map(n => {
+                    const {x, y} = getNodePosition(n);
+                    return [x, y];
+                });
+                const hull = polygonHull(points);
+                const path = smoothHull(hull, 50);
+                elems.push(<path d={path} key={highlight.join('-')} pathLength="9.9"
+                    className="highlight"/>);
+            } else if (highlight.length === 2) {
                 const [color, node] = highlight;
                 const {x, y} = getNodePosition(node);
                 elems.push(<circle
@@ -218,7 +262,7 @@ class StaggerredHighlights extends React.Component {
         this.timeoutID = null;
     }
 
-    componentWillMount() {
+    componentDidMount() {
         this.advance();
     }
 
